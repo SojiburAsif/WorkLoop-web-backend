@@ -3,7 +3,7 @@ const cors = require('cors');
 const app = express();
 require('dotenv').config()
 const port = process.env.PORT || 3000;
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId, } = require('mongodb');
 
 
 
@@ -41,26 +41,45 @@ async function run() {
         app.get('/working', async (req, res) => {
             const result = await workCollection.find().toArray();
             res.send(result)
+        })
 
-  })
-            await client.connect();
+        app.get('/working/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await workCollection.findOne(query);
+            console.log(result);
+            res.send(result);
+        });
 
-            await client.db("admin").command({ ping: 1 });
-            console.log("Pinged your deployment. You successfully connected to MongoDB!");
-        } finally {
-            // Ensures that the client will close when you finish/error
-            // await client.close();
-        }
+
+        app.post('/working', async (req, res) => {
+            const newWork = req.body;
+            console.log(newWork);
+            const result = await workCollection.insertOne(newWork);
+            res.send(result)
+        })
+
+
+
+
+
+        await client.connect();
+
+        await client.db("admin").command({ ping: 1 });
+        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    } finally {
+        // Ensures that the client will close when you finish/error
+        // await client.close();
     }
+}
 run().catch(console.dir);
 
 
 
-    app.get('/', (req, res) => {
-        res.send(' Freelance Hub Server: Empowering Your Projects with Top Talent Inspired by Tasky!');
-    });
+app.get('/', (req, res) => {
+    res.send(' Freelance Hub Server: Empowering Your Projects with Top Talent Inspired by Tasky!');
+});
 
-    app.listen(port, () => {
-        console.log(`services server is running on port ${port}`);
-    });
- 
+app.listen(port, () => {
+    console.log(`services server is running on port ${port}`);
+});
