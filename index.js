@@ -35,6 +35,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         const workCollection = client.db('server_user').collection('userr')
+        const BookingCollection = client.db('server_user').collection('Booking')
 
 
 
@@ -59,7 +60,62 @@ async function run() {
             res.send(result)
         })
 
+        app.put('/working/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const updateWork = req.body;
 
+            const updateDoc = {
+                $set: updateWork
+            };
+
+            const result = await workCollection.updateOne(filter, updateDoc, options);
+
+            res.send(result);
+        });
+
+        app.delete('/working/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await workCollection.deleteOne(query);
+            res.send(result)
+        })
+
+
+        // Services related api
+        app.get('/workings', async (req, res) => {
+            const email = req.query.email;
+            console.log(email);
+            const query = {
+
+                providerEmail: email
+
+            };
+
+            const result = await workCollection.find(query).toArray();
+            res.send(result);
+        });
+
+
+        // Booking 
+        app.post('/bookings', async (req, res) => {
+            const UserProfile = req.body;
+            console.log(UserProfile);
+            const result = await BookingCollection.insertOne(UserProfile);
+            res.send(result)
+        })
+
+        app.get('/bookings', async (req, res) => {
+
+            const email = req.query.email;
+            const query = {};
+            if (email) {
+                query.userEmail = email
+            }
+            const result = await BookingCollection.find(query).toArray();
+            res.send(result)
+        })
 
 
 
@@ -77,7 +133,7 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send(' Freelance Hub Server: Empowering Your Projects with Top Talent Inspired by Tasky!');
+    res.send(' Services Hube Hub Server: Empowering Your Projects with Top Talent Inspired by Services HUBE!');
 });
 
 app.listen(port, () => {
