@@ -99,12 +99,43 @@ async function run() {
 
 
         // Booking 
+
+
         app.post('/bookings', async (req, res) => {
             const UserProfile = req.body;
-            console.log(UserProfile);
+            // console.log(UserProfile);
             const result = await BookingCollection.insertOne(UserProfile);
             res.send(result)
         })
+
+
+
+        // app.post('/bookings', async (req, res) => {
+        //     const {
+        //         serviceId,
+        //         providerEmail,
+        //         userEmail,
+        //         takingDate
+        //     } = req.body;
+
+        //     const existingBooking = await BookingCollection.findOne({ serviceId, userEmail });
+
+        //     if (existingBooking) {
+        //         return res.status(400).json({ message: 'You already booked this service.' });
+        //     }
+
+        //     const providerBooked = await BookingCollection.findOne({ providerEmail, takingDate });
+
+        //     if (providerBooked) {
+        //         return res.status(409).json({ message: 'Provider is already booked on this date.' });
+        //     }
+
+        //     const result = await BookingCollection.insertOne({ ...req.body, serviceStatus: 'pending' });
+        //     res.status(201).json(result);
+        // });
+
+
+
 
         app.get('/bookings', async (req, res) => {
 
@@ -116,7 +147,20 @@ async function run() {
             const result = await BookingCollection.find(query).toArray();
             res.send(result)
         })
+        app.put('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const updateWork = req.body;
 
+            const updateDoc = {
+                $set: updateWork
+            };
+
+            const result = await BookingCollection.updateOne(filter, updateDoc, options);
+
+            res.send(result);
+        });
 
 
         await client.connect();
