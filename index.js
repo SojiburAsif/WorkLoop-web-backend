@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser')
 require('dotenv').config()
 const port = process.env.PORT || 3000;
 const { MongoClient, ServerApiVersion, ObjectId, } = require('mongodb');
@@ -8,11 +10,40 @@ const { MongoClient, ServerApiVersion, ObjectId, } = require('mongodb');
 
 
 
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:5173'],
+    credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
+
+const logger = (req, res, next) => {
+    console.log('inside the loger midilwere');
+    next()
+}
+const verifyToken = (req, res, next) => {
+    const token = req?.cookies?.token;
+    console.log('cookie in the middleware', token);
+    next()
+
+    if (!token) {
+        return res.status(401).send({ message: 'unauthoraiz assess' })
+    }
+
+    jwt.verify(token, process.env.JWT_ACCESS_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ message: 'unauthoraiz assess' })
+
+        }
+        req.decoded = decoded
+        console.log(decoded);
+    })
 
 
 
+
+
+}
 // console.log(process.env.DB_USER);
 // console.log(process.env.DB_PASS);
 
@@ -38,7 +69,27 @@ async function run() {
         const BookingCollection = client.db('server_user').collection('Booking')
 
 
+        // jwt Token related api
 
+        app.post('/jwt', async (req, res) => {
+            const userInfo = req.body;
+            const token = jwt.sign(userInfo, process.env.JWT_ACCESS_SECRET, {
+                expiresIn: '2h',
+            })
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: false
+            })
+            res.send({ success: true, token });
+        });
+
+
+
+
+
+
+
+        //   Work api
         app.get('/working', async (req, res) => {
             const result = await workCollection.find().toArray();
             res.send(result)
@@ -84,9 +135,13 @@ async function run() {
 
 
         // Services related api
-        app.get('/workings', async (req, res) => {
+        app.get('/workings', logger, verifyToken, async (req, res) => {
             const email = req.query.email;
-            console.log(email);
+            console.log('insaide application api', req.cookies);
+
+            if (email !== req.decoded.email) {
+                return res.status(403).send({ message: 'unauthoraiz assess' })
+            }
             const query = {
 
                 providerEmail: email
@@ -161,6 +216,9 @@ async function run() {
 
             res.send(result);
         });
+
+
+
 
 
         await client.connect();
