@@ -1,9 +1,10 @@
+require('dotenv').config()
 const express = require('express');
 const cors = require('cors');
 const app = express();
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser')
-require('dotenv').config()
+
 const port = process.env.PORT || 3000;
 const { MongoClient, ServerApiVersion, ObjectId, } = require('mongodb');
 
@@ -24,7 +25,7 @@ const logger = (req, res, next) => {
 const verifyToken = (req, res, next) => {
     const token = req?.cookies?.token;
     console.log('cookie in the middleware', token);
-    next()
+
 
     if (!token) {
         return res.status(401).send({ message: 'unauthoraiz assess' })
@@ -36,7 +37,9 @@ const verifyToken = (req, res, next) => {
 
         }
         req.decoded = decoded
+        
         console.log(decoded);
+        next()
     })
 
 
@@ -78,16 +81,12 @@ async function run() {
             })
             res.cookie('token', token, {
                 httpOnly: true,
-                secure: false
+                secure: true,
+                sameSite: 'none',
+                maxAge: 60 * 60 * 1000
             })
             res.send({ success: true, token });
         });
-
-
-
-
-
-
 
         //   Work api
         app.get('/working', async (req, res) => {
@@ -139,9 +138,9 @@ async function run() {
             const email = req.query.email;
             console.log('insaide application api', req.cookies);
 
-            if (email !== req.decoded.email) {
-                return res.status(403).send({ message: 'unauthoraiz assess' })
-            }
+            // if (email !== req.decoded.email) {
+            //     return res.status(403).send({ message: 'unauthoraiz assess' })
+            // }
             const query = {
 
                 providerEmail: email
@@ -156,7 +155,7 @@ async function run() {
         // Booking 
 
 
-        app.post('/bookings', async (req, res) => {
+        app.post('/bookings', verifyToken, async (req, res) => {
             const UserProfile = req.body;
             // console.log(UserProfile);
             const result = await BookingCollection.insertOne(UserProfile);
@@ -165,34 +164,9 @@ async function run() {
 
 
 
-        // app.post('/bookings', async (req, res) => {
-        //     const {
-        //         serviceId,
-        //         providerEmail,
-        //         userEmail,
-        //         takingDate
-        //     } = req.body;
-
-        //     const existingBooking = await BookingCollection.findOne({ serviceId, userEmail });
-
-        //     if (existingBooking) {
-        //         return res.status(400).json({ message: 'You already booked this service.' });
-        //     }
-
-        //     const providerBooked = await BookingCollection.findOne({ providerEmail, takingDate });
-
-        //     if (providerBooked) {
-        //         return res.status(409).json({ message: 'Provider is already booked on this date.' });
-        //     }
-
-        //     const result = await BookingCollection.insertOne({ ...req.body, serviceStatus: 'pending' });
-        //     res.status(201).json(result);
-        // });
 
 
-
-
-        app.get('/bookings', async (req, res) => {
+        app.get('/bookings',verifyToken, async (req, res) => {
 
             const email = req.query.email;
             const query = {};
@@ -221,10 +195,10 @@ async function run() {
 
 
 
-        await client.connect();
+        // await client.connect();
 
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // await client.db("admin").command({ ping: 1 });
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
