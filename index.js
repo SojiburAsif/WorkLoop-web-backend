@@ -12,7 +12,7 @@ const { MongoClient, ServerApiVersion, ObjectId, } = require('mongodb');
 
 
 app.use(cors({
-    origin: ['http://localhost:5173'],
+    origin: ['http://localhost:5173', 'https://celadon-griffin-404747.netlify.app'],
     credentials: true
 }));
 app.use(express.json());
@@ -175,6 +175,8 @@ async function run() {
             }
             const result = await BookingCollection.find(query).toArray();
             res.send(result)
+
+            
         })
         app.put('/bookings/:id', async (req, res) => {
             const id = req.params.id;
